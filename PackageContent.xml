@@ -15,12 +15,6 @@
   
   <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
   
-  <!-- 启动脚本组件 -->
-  <Components Description="Startup scripts">
-     <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
-     <ComponentEntry ModuleName="./scripts/pyStartup.py" />
-  </Components>
-  
   <!-- Python脚本组件 -->
   <Components Description="Python Scripts">
      <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />

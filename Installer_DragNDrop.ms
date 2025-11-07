@@ -11,7 +11,6 @@ MaxExporter 安装脚本
 		- ExtractAnimABC.py
 		- ExtractAnimBone.py
 		- ExtractCameraFBX.py
-		- pyStartup.py
 	- Installer_DragNDrop.mse
 ==========================================================================
 */

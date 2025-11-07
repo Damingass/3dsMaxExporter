@@ -48,7 +48,7 @@ def socketsOutput(objs, outFile="", timeRange=[]):
             # 其他设置
             rt.FBXExporterSetParam("ScaleFactor", 1.0)
             rt.FBXExporterSetParam("Units", "cm")
-            rt.FBXExporterSetParam("UpAxis", "Y-up")
+            rt.FBXExporterSetParam("UpAxis", "Z-up")
             rt.FBXExporterSetParam("EmbedTextures", False)
             # 导出骨骼（包括层级关系和动画）
             # 确保路径正确传递给MaxScript（使用Unicode字符串）

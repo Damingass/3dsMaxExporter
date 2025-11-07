@@ -31,7 +31,7 @@ class PyMaxDockWidget(QtWidgets.QDockWidget):
     def __init__(self, parent=None):
         super(PyMaxDockWidget, self).__init__(parent)
         self.setWindowFlags(QtCore.Qt.Tool)
-        self.setWindowTitle('Pyside Qt  Dock Window')
+        self.setWindowTitle('MaxExporter')
         self.initUI()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         qtmax.DisableMaxAcceleratorsOnFocus(self, True)

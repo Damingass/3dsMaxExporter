@@ -52,7 +52,7 @@ def cameraOutput(cam, outFile="", timeRange=[]):
             rt.FBXExporterSetParam("Animation", 1)
             rt.FBXExporterSetParam("ScaleFactor", 1)
             rt.FBXExporterSetParam("Units", "cm")
-            rt.FBXExporterSetParam("UpAxis", "Y-up")
+            rt.FBXExporterSetParam("UpAxis", "Z-up")
             # 确保路径正确传递给MaxScript（使用Unicode字符串）
             rt.exportFile(
                 rt.name(outFile),
@@ -89,7 +89,7 @@ def cameraOutput(cam, outFile="", timeRange=[]):
                 using="AlembicExport",
                 start=timeRange[0],
                 end=timeRange[1],
-                coordinateSystem="Y-up",
+                coordinateSystem="Z-up",
             )
 
     return newCamNode
