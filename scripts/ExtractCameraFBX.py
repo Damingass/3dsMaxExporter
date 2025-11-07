@@ -21,6 +21,9 @@ class ExtractCameraFBX(pyblish.api.InstancePlugin):
         pub_dir = context.data["arcolab_publish_main_dir"]
         camera = instance.data['camera']
         path = f'{pub_dir}\\camera.fbx'
+        # 确保路径支持中文
+        import os
+        path = os.path.abspath(path)
         self.log.info(f'export abc: {path}')
         run_on_main_thread(
             cameraOutput.cameraOutput,

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage
+        SchemaVersion="1.0"
+        AutodeskProduct="3ds Max"
+        Name="MaxExporter"
+        Description="Max Exporter"
+        AppVersion="0.0.1"
+        ProductType="Application"
+        AppNameSpace="appstore.exchange.autodesk.com"
+        Author="TEST"
+        ProductCode="{31C5CD2E-F2A7-4716-9C50-B4CD11C1C568}"
+        UpgradeCode="{14C34C70-07C7-4562-B3A8-5A8C4C95C97A}">
+  
+  <CompanyDetails Name="Autodesk" Url="https://www.autodesk.com" />
+  
+  <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
+  
+  <!-- 启动脚本组件 -->
+  <Components Description="Startup scripts">
+     <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
+     <ComponentEntry ModuleName="./scripts/pyStartup.py" />
+  </Components>
+  
+  <!-- Python脚本组件 -->
+  <Components Description="Python Scripts">
+     <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
+     <ComponentEntry ModuleName="./scripts/Main.py" />
+     <ComponentEntry ModuleName="./scripts/cameraOutput.py" />
+     <ComponentEntry ModuleName="./scripts/socketsOutput.py" />
+     <ComponentEntry ModuleName="./scripts/ExtractAnimABC.py" />
+     <ComponentEntry ModuleName="./scripts/ExtractAnimBone.py" />
+     <ComponentEntry ModuleName="./scripts/ExtractCameraFBX.py" />
+  </Components>
+  
+  <!-- MacroScript组件（用于菜单按钮） -->
+  <Components Description="MacroScripts">
+     <RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="2025" SeriesMax="2025" />
+     <ComponentEntry ModuleName="./Content/MacroScripts/MaxExporter_Menu.mcr" />
+  </Components>
+  
+</ApplicationPackage>

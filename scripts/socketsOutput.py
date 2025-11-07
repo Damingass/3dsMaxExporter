@@ -1,5 +1,7 @@
+# -*- coding:utf8 -*-
 import pymxs
 import os
+import sys
 
 
 def socketsOutput(objs, outFile="", timeRange=[]):
@@ -24,9 +26,11 @@ def socketsOutput(objs, outFile="", timeRange=[]):
         timeRange = [int(tr.start), int(tr.end)]
 
     if outFile:
+        # 确保路径支持中文：转换为绝对路径并确保Unicode编码
+        outFile = os.path.abspath(outFile)
         outDir = os.path.dirname(outFile)
         if not os.path.isdir(outDir):
-            os.makedirs(outDir)
+            os.makedirs(outDir, exist_ok=True)
 
         # 直接选择原始骨骼节点进行导出
         # FBX 导出器会自动保持层级关系和动画
@@ -43,11 +47,13 @@ def socketsOutput(objs, outFile="", timeRange=[]):
             rt.FBXExporterSetParam("BakeAnimation", True)
             # 其他设置
             rt.FBXExporterSetParam("ScaleFactor", 1.0)
+            rt.FBXExporterSetParam("Units", "cm")
             rt.FBXExporterSetParam("UpAxis", "Y-up")
             rt.FBXExporterSetParam("EmbedTextures", False)
             # 导出骨骼（包括层级关系和动画）
+            # 确保路径正确传递给MaxScript（使用Unicode字符串）
             rt.exportFile(
-                outFile,
+                rt.name(outFile),
                 pymxs.runtime.Name("noPrompt"),
                 selectedOnly=True,
                 using="FBXEXP",

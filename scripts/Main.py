@@ -1,9 +1,17 @@
+# -*- coding:utf8 -*-
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 import qtmax
 import os
 import sys
+
+# 确保系统默认编码支持UTF-8（用于中文路径）
+if sys.platform == 'win32':
+    import locale
+    # 设置文件系统编码为UTF-8
+    if hasattr(sys, '_enablelegacywindowsfsencoding'):
+        sys._enablelegacywindowsfsencoding = False
 
 # 获取脚本所在目录
 SCRIPT_DIR = os.path.dirname(__file__)
