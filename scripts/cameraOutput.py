@@ -51,7 +51,7 @@ def cameraOutput(cam, outFile="", timeRange=[]):
             rt.FBXExporterSetParam("ResetExport")
             rt.FBXExporterSetParam("Animation", 1)
             rt.FBXExporterSetParam("ScaleFactor", 1)
-            rt.FBXExporterSetParam("Units", "cm")
+            rt.FBXExporterSetParam("Units", "Centimeters")
             rt.FBXExporterSetParam("UpAxis", "Z-up")
             # 确保路径正确传递给MaxScript（使用Unicode字符串）
             rt.exportFile(
