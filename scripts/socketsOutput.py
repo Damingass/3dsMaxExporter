@@ -47,7 +47,7 @@ def socketsOutput(objs, outFile="", timeRange=[]):
             rt.FBXExporterSetParam("BakeAnimation", True)
             # 其他设置
             rt.FBXExporterSetParam("ScaleFactor", 1.0)
-            rt.FBXExporterSetParam("Units", "cm")
+            rt.FBXExporterSetParam("Units", "Centimeters")
             rt.FBXExporterSetParam("UpAxis", "Z-up")
             rt.FBXExporterSetParam("EmbedTextures", False)
             # 导出骨骼（包括层级关系和动画）
