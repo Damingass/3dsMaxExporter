@@ -81,7 +81,7 @@ class PyMaxDockWidget(QtWidgets.QDockWidget):
             QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{str(e)}")
 
     def export_socket_bone(self):
-        """导出Socket Bone"""
+        """导出Socket Bone（兼容常规物体）"""
         # 获取保存路径
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "保存FBX文件", "", "FBX Files (*.fbx)"
@@ -91,28 +91,52 @@ class PyMaxDockWidget(QtWidgets.QDockWidget):
         
         # 获取选中的对象
         selected_objs = rt.selection
+        
         if not selected_objs:
-            QtWidgets.QMessageBox.warning(self, "警告", "请先选择要导出的对象")
-            return
-        
-        # 递归收集选中节点及其所有子节点
-        def collect_children(node, collected):
-            """递归收集节点及其所有子节点"""
-            if node not in collected:
-                collected.append(node)
-            # 获取所有子节点
-            for child in node.children:
-                collect_children(child, collected)
-        
-        all_objs = []
-        for obj in selected_objs:
-            collect_children(obj, all_objs)
-        
-        objs = [obj.name for obj in all_objs]
+            # 没有选中物体时，导出全部对象（包括骨骼和常规物体）
+            all_objects = rt.objects
+            # 过滤掉隐藏对象和系统对象（可选）
+            visible_objects = [obj for obj in all_objects if not obj.isHidden]
+            if not visible_objects:
+                QtWidgets.QMessageBox.warning(self, "警告", "场景中没有找到可导出的对象")
+                return
+            objs = [obj.name for obj in visible_objects]
+        else:
+            # 选中物体时，导出该物体及其所有父子级和平级物体
+            def find_root_node(node):
+                """向上查找根节点（没有父节点的节点）"""
+                current = node
+                while current.parent:
+                    current = current.parent
+                return current
+            
+            def collect_all_descendants(node, collected):
+                """从节点开始，向下递归收集所有后代节点（包括平级）"""
+                if node not in collected:
+                    collected.append(node)
+                # 收集所有子节点（包括平级）
+                for child in node.children:
+                    collect_all_descendants(child, collected)
+            
+            # 找到所有选中对象的根节点
+            root_nodes = set()
+            for obj in selected_objs:
+                root = find_root_node(obj)
+                root_nodes.add(root)
+            
+            # 从每个根节点开始，收集所有后代节点
+            all_objs = []
+            for root in root_nodes:
+                collect_all_descendants(root, all_objs)
+            
+            if not all_objs:
+                QtWidgets.QMessageBox.warning(self, "警告", "没有找到可导出的对象")
+                return
+            objs = [obj.name for obj in all_objs]
         
         try:
             socketsOutput(objs, file_path)
-            QtWidgets.QMessageBox.information(self, "成功", f"Socket Bone文件已导出到:\n{file_path}")
+            QtWidgets.QMessageBox.information(self, "成功", f"FBX文件已导出到:\n{file_path}")
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{str(e)}")
 
