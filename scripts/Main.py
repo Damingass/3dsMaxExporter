@@ -1,6 +1,9 @@
 # -*- coding:utf8 -*-
+"""
+主UI模块
+仅包含界面逻辑，所有功能实现都在对应的模块中
+"""
 from PySide6 import QtCore
-from PySide6 import QtGui
 from PySide6 import QtWidgets
 import qtmax
 import os
@@ -8,8 +11,6 @@ import sys
 
 # 确保系统默认编码支持UTF-8（用于中文路径）
 if sys.platform == 'win32':
-    import locale
-    # 设置文件系统编码为UTF-8
     if hasattr(sys, '_enablelegacywindowsfsencoding'):
         sys._enablelegacywindowsfsencoding = False
 
@@ -20,176 +21,166 @@ SCRIPT_DIR = os.path.dirname(__file__)
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
+# 导入各个功能模块
+from ExportItem import collect_export_nodes, get_default_export_name, make_safe_filename, export_fbx
+from SelectItem import select_hierarchy, select_related, select_group
+from SmoothNormal import smooth_normal_to_vertex_color
+from DrawNormal import visualize_normals
 
 
-from pymxs import runtime as rt
-from ExtractAnimABC import export_mesh_abc
-from socketsOutput import socketsOutput
-import cameraOutput
-    
 class PyMaxDockWidget(QtWidgets.QDockWidget):
+    """3ds Max导出器主窗口"""
+    
     def __init__(self, parent=None):
         super(PyMaxDockWidget, self).__init__(parent)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setWindowTitle('MaxExporter')
-        self.initUI()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         qtmax.DisableMaxAcceleratorsOnFocus(self, True)
-        
-    def initUI(self):
+        self._init_ui()
+
+    def _init_ui(self):
+        """初始化UI界面"""
         main_layout = QtWidgets.QVBoxLayout()
-        label = QtWidgets.QLabel("导出工具")
-        main_layout.addWidget(label)
 
-        # 导出动画ABC按钮
-        export_abc_btn = QtWidgets.QPushButton("导出动画ABC")
-        export_abc_btn.clicked.connect(self.export_anim_abc)
-        main_layout.addWidget(export_abc_btn)
+        # 根层级设置
+        depth_layout = QtWidgets.QHBoxLayout()
+        depth_label = QtWidgets.QLabel("根层级:")
+        depth_label.setToolTip("0 表示追溯到根节点；1 表示追溯到根节点的子节点；以此类推。")
+        depth_layout.addWidget(depth_label)
 
-        # 导出Socket Bone按钮
-        export_socket_btn = QtWidgets.QPushButton("导出Socket Bone")
-        export_socket_btn.clicked.connect(self.export_socket_bone)
-        main_layout.addWidget(export_socket_btn)
+        self.root_depth_spin = QtWidgets.QSpinBox()
+        self.root_depth_spin.setRange(0, 10)
+        self.root_depth_spin.setValue(0)
+        self.root_depth_spin.setToolTip("控制向上追溯的层级，避免同根节点时全选整个场景。")
+        depth_layout.addWidget(self.root_depth_spin)
+        depth_layout.addStretch()
 
-        # 导出相机FBX按钮
-        export_camera_btn = QtWidgets.QPushButton("导出相机FBX")
-        export_camera_btn.clicked.connect(self.export_camera_fbx)
-        main_layout.addWidget(export_camera_btn)
+        main_layout.addLayout(depth_layout)
+
+        # 选择相关按钮
+        select_btn = QtWidgets.QPushButton("选中父子级")
+        select_btn.clicked.connect(self.on_select_hierarchy)
+        main_layout.addWidget(select_btn)
+        
+        select_related_btn = QtWidgets.QPushButton("选中关联项")
+        select_related_btn.clicked.connect(self.on_select_related)
+        main_layout.addWidget(select_related_btn)
+
+        select_group_btn = QtWidgets.QPushButton("全选组")
+        select_group_btn.clicked.connect(self.on_select_group)
+        main_layout.addWidget(select_group_btn)
+
+        # 导出按钮
+        export_btn = QtWidgets.QPushButton("导出")
+        export_btn.clicked.connect(self.on_export_selection)
+        main_layout.addWidget(export_btn)
+
+        # 添加分隔线
+        separator = QtWidgets.QFrame()
+        separator.setFrameShape(QtWidgets.QFrame.HLine)
+        separator.setFrameShadow(QtWidgets.QFrame.Sunken)
+        main_layout.addWidget(separator)
+
+        # 法线工具标签
+        normal_label = QtWidgets.QLabel("法线工具:")
+        normal_label.setStyleSheet("font-weight: bold;")
+        main_layout.addWidget(normal_label)
+
+        # 平滑法线按钮
+        smooth_normal_btn = QtWidgets.QPushButton("平滑法线")
+        smooth_normal_btn.setToolTip("将选中对象的平滑法线烘焙到顶点色通道")
+        smooth_normal_btn.clicked.connect(self.on_smooth_normal)
+        main_layout.addWidget(smooth_normal_btn)
+
+        # 绘制法线按钮
+        visualize_normal_btn = QtWidgets.QPushButton("绘制法线")
+        visualize_normal_btn.setToolTip("可视化显示顶点法线方向（调试用）")
+        visualize_normal_btn.clicked.connect(self.on_visualize_normals)
+        main_layout.addWidget(visualize_normal_btn)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(main_layout)
         self.setWidget(widget)
-        self.resize(250, 150)
+        self.setMinimumSize(260, 220)
+        self.resize(320, 300)
 
-    def export_anim_abc(self):
-        """导出动画ABC"""
-        # 获取保存路径
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "保存ABC文件", "", "Alembic Files (*.abc)"
+    # === 事件处理方法 ===
+    
+    def on_select_hierarchy(self):
+        """选中父子级按钮点击事件"""
+        success, error_msg = select_hierarchy(ancestor_depth=self.root_depth_spin.value())
+        if not success:
+            QtWidgets.QMessageBox.warning(self, "警告", error_msg)
+
+    def on_select_related(self):
+        """选中关联项按钮点击事件"""
+        success, error_msg = select_related()
+        if not success:
+            QtWidgets.QMessageBox.information(self, "提示", error_msg)
+
+    def on_select_group(self):
+        """全选组按钮点击事件"""
+        success, error_msg = select_group()
+        if not success:
+            QtWidgets.QMessageBox.information(self, "提示", error_msg)
+
+    def on_export_selection(self):
+        """导出按钮点击事件"""
+        # 收集导出节点
+        success, nodes, export_name, error_msg = collect_export_nodes(
+            ancestor_depth=self.root_depth_spin.value()
         )
-        if not file_path:
+        
+        if not success:
+            QtWidgets.QMessageBox.warning(self, "警告", error_msg)
             return
         
-        # 获取选中的对象
-        selected_objs = rt.selection
-        meshes = [obj.name for obj in selected_objs] if selected_objs else None
-        
-        try:
-            export_mesh_abc(file_path, meshes)
-            QtWidgets.QMessageBox.information(self, "成功", f"ABC文件已导出到:\n{file_path}")
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{str(e)}")
-
-    def export_socket_bone(self):
-        """导出Socket Bone（兼容常规物体）"""
-        # 获取保存路径
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "保存FBX文件", "", "FBX Files (*.fbx)"
-        )
-        if not file_path:
-            return
-        
-        # 获取选中的对象
-        selected_objs = rt.selection
-        
-        if not selected_objs:
-            # 没有选中物体时，导出全部对象（包括骨骼和常规物体）
-            all_objects = rt.objects
-            # 过滤掉隐藏对象和系统对象（可选）
-            visible_objects = [obj for obj in all_objects if not obj.isHidden]
-            if not visible_objects:
-                QtWidgets.QMessageBox.warning(self, "警告", "场景中没有找到可导出的对象")
-                return
-            objs = [obj.name for obj in visible_objects]
+        # 获取默认文件名
+        if export_name:
+            default_name = make_safe_filename(export_name)
         else:
-            # 选中物体时，导出该物体及其所有父子级和平级物体
-            def find_root_node(node):
-                """向上查找根节点（没有父节点的节点）"""
-                current = node
-                while current.parent:
-                    current = current.parent
-                return current
-            
-            def collect_all_descendants(node, collected):
-                """从节点开始，向下递归收集所有后代节点（包括平级）"""
-                if node not in collected:
-                    collected.append(node)
-                # 收集所有子节点（包括平级）
-                for child in node.children:
-                    collect_all_descendants(child, collected)
-            
-            # 找到所有选中对象的根节点
-            root_nodes = set()
-            for obj in selected_objs:
-                root = find_root_node(obj)
-                root_nodes.add(root)
-            
-            # 从每个根节点开始，收集所有后代节点
-            all_objs = []
-            for root in root_nodes:
-                collect_all_descendants(root, all_objs)
-            
-            if not all_objs:
-                QtWidgets.QMessageBox.warning(self, "警告", "没有找到可导出的对象")
-                return
-            objs = [obj.name for obj in all_objs]
+            default_name = get_default_export_name()
         
-        try:
-            socketsOutput(objs, file_path)
-            QtWidgets.QMessageBox.information(self, "成功", f"FBX文件已导出到:\n{file_path}")
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{str(e)}")
-
-    def export_camera_fbx(self):
-        """导出相机FBX"""
-        # 获取保存路径
+        # 弹出文件保存对话框
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "保存FBX文件", "", "FBX Files (*.fbx)"
+            self,
+            "保存FBX文件",
+            f"{default_name}.fbx",
+            "FBX Files (*.fbx)",
         )
+        
         if not file_path:
             return
         
-        # 获取选中的相机
-        selected_objs = rt.selection
-        if not selected_objs:
-            QtWidgets.QMessageBox.warning(self, "警告", "请先选择相机对象")
-            return
+        # 执行导出
+        success, error_msg = export_fbx(nodes, file_path)
         
-        camera = selected_objs[0]
-        # 检查是否是相机类型（支持多种相机类型：Freecamera, Targetcamera, Physical_Camera 等）
-        # 使用 superClassOf 检查是否是相机的子类，这是最可靠的方法
-        try:
-            is_camera = rt.superClassOf(camera) == rt.Camera
-            # 如果 superClassOf 检查失败，尝试检查类名
-            if not is_camera:
-                camera_class_str = str(rt.classOf(camera))
-                is_camera = "Camera" in camera_class_str
-        except:
-            # 如果检查出错，尝试通过类名判断
-            camera_class_str = str(rt.classOf(camera))
-            is_camera = "Camera" in camera_class_str
-        
-        if not is_camera:
-            camera_class_str = str(rt.classOf(camera))
-            QtWidgets.QMessageBox.warning(
-                self, 
-                "警告", 
-                f"选中的对象不是相机。对象类型: {camera_class_str}"
-            )
-            return
-        
-        try:
-            cameraOutput.cameraOutput(camera.name, outFile=file_path)
-            QtWidgets.QMessageBox.information(self, "成功", f"相机FBX文件已导出到:\n{file_path}")
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{str(e)}")
+        if success:
+            QtWidgets.QMessageBox.information(self, "成功", f"FBX文件已导出到:\n{file_path}")
+        else:
+            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败:\n{error_msg}")
+
+    def on_smooth_normal(self):
+        """平滑法线按钮点击事件"""
+        success, error_msg = smooth_normal_to_vertex_color()
+        if not success:
+            QtWidgets.QMessageBox.warning(self, "提示", error_msg)
+
+    def on_visualize_normals(self):
+        """绘制法线按钮点击事件"""
+        success, error_msg = visualize_normals()
+        if not success:
+            QtWidgets.QMessageBox.warning(self, "提示", error_msg)
+
 
 def main():
-    #rt.resetMaxFile(rt.name('noPrompt'))
+    """启动主窗口"""
     main_window = qtmax.GetQMaxMainWindow()
-    w = PyMaxDockWidget(parent=main_window)
-    w.setFloating(True)
-    w.show()
+    dock = PyMaxDockWidget(parent=main_window)
+    dock.setFloating(True)
+    dock.show()
+
 
 if __name__ == '__main__':
     main()

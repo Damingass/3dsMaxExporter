@@ -6,11 +6,7 @@ MaxExporter 安装脚本
 + /MaxExporter/
 	+ /MaxExporter/scripts
 		- Main.py
-		- cameraOutput.py
 		- socketsOutput.py
-		- ExtractAnimABC.py
-		- ExtractAnimBone.py
-		- ExtractCameraFBX.py
 	- Installer_DragNDrop.mse
 ==========================================================================
 */
